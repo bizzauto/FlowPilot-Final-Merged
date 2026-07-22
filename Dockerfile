@@ -9,9 +9,13 @@ COPY web/prisma ./prisma
 
 RUN npm install
 
+# Generate Prisma Client with dummy DATABASE_URL for build
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
+
 COPY web/ .
 
-RUN npm run build
+# Build with dummy DATABASE_URL
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npm run build
 
 RUN chmod +x ./scripts/docker-entrypoint.sh || true
 
