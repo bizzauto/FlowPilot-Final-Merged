@@ -4,14 +4,14 @@ RUN apk add --no-cache openssl libc6-compat wget
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY prisma ./prisma
+COPY web/package*.json ./
+COPY web/prisma ./prisma
 
 RUN npm install
 
 RUN npx prisma generate
 
-COPY . .
+COPY web/ .
 
 RUN npm run build
 
