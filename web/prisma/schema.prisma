@@ -87,7 +87,7 @@ model Membership {
 
 model Contact {
   id             String         @id @default(cuid())
-  organizationId String
+  organizationId String         @default("")
   name           String
   email          String?
   phone          String?
@@ -97,7 +97,7 @@ model Contact {
   conversations  Conversation[]
   consents       Consent[]
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
