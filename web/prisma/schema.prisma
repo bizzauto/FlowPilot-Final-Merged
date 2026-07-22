@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                 String              @id @default(cuid())
+  name               String
+  slug               String              @unique
+  active             Boolean             @default(true)
+
+  parentId           String?
+  parent             Organization?       @relation("OrgTree", fields: [parentId], references: [id])
+  children           Organization[]      @relation("OrgTree")
+
+  logoUrl            String?
+  primaryColor       String?
+  customDomain       String?             @unique
+  plan               String              @default("starter")
+
+  memberships        Membership[]
+  contacts           Contact[]
+  conversations      Conversation[]
+  messages           Message[]
+  apiKeys            ApiKey[]
+  consents           Consent[]
+  campaigns          Campaign[]
+  workflows          Workflow[]
+  workflowExecutions WorkflowExecution[]
+  whatsappTemplates  WhatsAppTemplate[]
+  subscriptions      Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id             String   @id @default(cuid())
+  organizationId String
+  provider       String   @default("stripe")
+  customerId     String?
+  subscriptionId String?
+  priceId        String?
+  plan           String
+  status         String   @default("active")
+  currentPeriodEnd DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String?
+  email        String       @unique
+  passwordHash String?
+  memberships  Membership[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Membership {
+  id             String  @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String  @default("ADMIN")
+  active         Boolean @default(true)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+model Contact {
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String
+  email          String?
+  phone          String?
+  stage          String         @default("NEW")
+  score          Int            @default(0)
+  tags           String[]
+  conversations  Conversation[]
+  consents       Consent[]
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, phone])
+  @@index([organizationId, email])
+  @@index([organizationId, stage])
+}
+
+model Conversation {
+  id             String    @id @default(cuid())
+  organizationId String
+  contactId      String
+  channel        String    @default("WHATSAPP")
+  status         String    @default("open")
+  lastMessageAt  DateTime?
+  messages       Message[]
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, contactId])
+  @@index([organizationId, lastMessageAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  organizationId String
+  conversationId String
+  direction      String
+  body           String
+  mediaUrl       String?
+  status         String   @default("QUEUED")
+  externalId     String?
+  provider       String?
+  errorMessage   String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, externalId])
+  @@index([conversationId, createdAt])
+}
+
+model ApiKey {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  prefix         String
+  keyHash        String    @unique
+  scopes         String[]
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, revokedAt])
+}
+
+model Consent {
+  id             String   @id @default(cuid())
+  organizationId String
+  contactId      String
+  channel        String
+  status         String   @default("PENDING")
+  optOutReason   String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, contactId, channel])
+}
+
+model IncomingEvent {
+  id         String  @id @default(cuid())
+  provider   String
+  externalId String
+  raw        Json
+  processed  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, externalId])
+}
+
+model Campaign {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  channel        String   @default("WHATSAPP")
+  status         String   @default("DRAFT")
+  audience       Json?
+  content        Json?
+  metrics        Json?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+}
+
+model Workflow {
+  id             String              @id @default(cuid())
+  organizationId String
+  name           String
+  trigger        String
+  steps          Json
+  active         Boolean             @default(true)
+  executions     WorkflowExecution[]
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, active])
+}
+
+model WorkflowExecution {
+  id             String    @id @default(cuid())
+  organizationId String
+  workflowId     String
+  contactId      String?
+  status         String    @default("PENDING")
+  error          String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workflow     Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+}
+
+model WhatsAppTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  language       String   @default("en_US")
+  category       String   @default("MARKETING")
+  status         String   @default("DRAFT")
+  body           String
+  active         Boolean  @default(true)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name, language])
+}
