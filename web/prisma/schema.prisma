@@ -91,7 +91,7 @@ model Contact {
   name           String
   email          String?
   phone          String?
-  stage          String         @default("NEW")
+  stage          String?        @default("NEW")
   score          Int            @default(0)
   tags           String[]
   conversations  Conversation[]
