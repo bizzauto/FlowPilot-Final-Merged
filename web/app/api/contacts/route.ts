@@ -1,23 +1,26 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-options";
 import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.organizationId) {
+      return NextResponse.json({ items: [] });
+    }
+
     const items = await prisma.contact.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
+      where: { organizationId: session.user.organizationId },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ items });
   } catch (error) {
     return NextResponse.json(
-      {
-        items: [],
-        error: "Database not ready",
-      },
+      { items: [], error: "Database not ready" },
       { status: 500 }
     );
   }
@@ -25,6 +28,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.organizationId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     if (!body || !body.name) {
@@ -36,6 +44,7 @@ export async function POST(req: Request) {
 
     const contact = await prisma.contact.create({
       data: {
+        organizationId: session.user.organizationId,
         name: body.name,
         email: body.email,
         phone: body.phone,
