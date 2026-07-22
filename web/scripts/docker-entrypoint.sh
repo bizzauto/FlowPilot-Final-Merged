@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+npx prisma generate
+
 if [ -d prisma/migrations ] && [ -n "$(ls -A prisma/migrations 2>/dev/null)" ]; then
   npx prisma migrate deploy --skip-generate
 else

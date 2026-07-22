@@ -9,8 +9,6 @@ COPY web/prisma ./prisma
 
 RUN npm install
 
-RUN npx prisma generate
-
 COPY web/ .
 
 RUN npm run build
