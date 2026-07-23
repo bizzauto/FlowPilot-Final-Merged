@@ -9,10 +9,10 @@ function hashApiKey(key: string) {
 }
 
 async function main() {
-  const orgSlug = process.env.DEFAULT_ORG_SLUG || "acme";
-  const orgName = process.env.DEFAULT_ORG_NAME || "Acme Inc";
-  const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "admin@flowpilot.local";
-  const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ChangeAdmin@123";
+  const orgSlug = process.env.DEFAULT_ORG_SLUG || "bizzauto";
+  const orgName = process.env.DEFAULT_ORG_NAME || "BizzAuto";
+  const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "bizzauto.solution@gmail.com";
+  const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "BizzAuto@123";
 
   const organization = await prisma.organization.upsert({
     where: { slug: orgSlug },
@@ -29,7 +29,7 @@ async function main() {
     where: { email: adminEmail },
     update: {},
     create: {
-      name: "Platform Admin",
+      name: "BizzAuto Admin",
       email: adminEmail,
       passwordHash,
     },
