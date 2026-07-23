@@ -87,7 +87,7 @@ model Membership {
 
 model Contact {
   id             String         @id @default(cuid())
-  organizationId String         @default("")
+  organizationId String?
   name           String
   email          String?
   phone          String?
