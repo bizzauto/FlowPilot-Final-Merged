@@ -9,4 +9,7 @@ else
   npx prisma db push --skip-generate --accept-data-loss --force-reset
 fi
 
+echo "Seeding database..."
+npx tsx scripts/seed.ts
+
 exec "$@"
